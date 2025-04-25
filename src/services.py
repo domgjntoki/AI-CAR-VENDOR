@@ -50,7 +50,7 @@ async def delete_car(car_id: int, connection: AsyncConnection) -> None:
 async def get_filtered_cars(filters: dict, connection: AsyncConnection) -> list[dict]:
     query_filters = []
     for key, value in filters.items():
-        if value is not None and key in FILTER_MAPPING:
+        if value is not None and key in FILTER_MAPPING and value:
             # Map logical keys (e.g., min_year) to actual column names (e.g., year)
             column_name = key.replace("min_", "").replace("max_", "")  # Extract base column name
             if hasattr(cars.c, column_name):

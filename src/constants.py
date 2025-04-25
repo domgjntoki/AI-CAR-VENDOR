@@ -1,5 +1,7 @@
 from enum import Enum
 
+from sqlalchemy import func, or_
+
 DB_NAMING_CONVENTION = {
     "ix": "%(column_0_label)s_idx",
     "uq": "%(table_name)s_%(column_0_name)s_key",
@@ -9,17 +11,17 @@ DB_NAMING_CONVENTION = {
 }
 
 FILTER_MAPPING = {
-    "brand": lambda col, value: col.in_(value),
-    "model": lambda col, value: col.in_(value),
-    "min_year": lambda col, value: col >= value,
-    "max_year": lambda col, value: col <= value,
-    "min_price": lambda col, value: col >= value,
-    "max_price": lambda col, value: col <= value,
-    "fuel_type": lambda col, value: col.in_(value),
-    "color": lambda col, value: col.in_(value),
-    "mileage": lambda col, value: col <= value,
-    "doors": lambda col, value: col == value,
-    "transmission": lambda col, value: col.in_(value),
+    "brand": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value]) if value else None,
+    "model": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value]) if value else None,
+    "min_year": lambda col, value: col >= value if value else None,
+    "max_year": lambda col, value: col <= value if value else None,
+    "min_price": lambda col, value: col >= value if value else None,
+    "max_price": lambda col, value: col <= value if value else None,
+    "fuel_type": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value]) if value else None,
+    "color": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value]) if value else None,
+    "mileage": lambda col, value: col <= value if value else None,
+    "doors": lambda col, value: col == value if value else None,
+    "transmission": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value]) if value else None,
 }
 
 class Environment(str, Enum):
