@@ -35,3 +35,16 @@ class CarUpdate(BaseModel):
 
 class CarResponse(CarBase):
     id: int = Field(..., description="Car ID")
+    
+class CarFilter(BaseModel):
+    brand: Optional[list[str]] = None
+    model: Optional[list[str]] = None
+    min_year: Optional[int] = None
+    max_year: Optional[int] = None
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+    fuel_type: Optional[list[str]] = None
+    color: Optional[list[str]] = None
+    mileage: Optional[int] = None
+    doors: Optional[int] = None
+    transmission: Optional[list[str]] = None

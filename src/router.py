@@ -1,16 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from src.database import get_db_connection
 from src.exceptions import CarNotFoundError, CarUpdateError, CarDeletionError, CarCreationError
-from src.schemas import CarCreate, CarResponse, CarUpdate
+from src.schemas import CarCreate, CarResponse, CarUpdate, CarFilter
 from src.services import (
     create_car,
     create_multiple_cars,
     get_car_by_id,
     get_all_cars,
     update_car,
-    delete_car,
+    delete_car, get_filtered_cars,
 )
 
 router = APIRouter(
@@ -70,3 +70,31 @@ async def remove_car(car_id: int, connection: AsyncConnection = Depends(get_db_c
         await delete_car(car_id, connection)
     except Exception:
         raise CarDeletionError()
+
+
+@router.get("/cars")
+async def filter_cars(
+    brand: str | None = Query(None),
+    year: int | None = Query(None),
+    fuel_type: str | None = Query(None),
+    connection: AsyncConnection = Depends(get_db_connection),
+):
+    filters = {}
+    if brand:
+        filters["brand"] = brand
+    if year:
+        filters["year"] = year
+    if fuel_type:
+        filters["fuel_type"] = fuel_type
+
+    cars = await get_all_cars(connection, filters)
+    return {"results": cars}
+
+from fastapi import Body
+
+@router.post("/cars/filter", response_model=list[CarResponse])
+async def filter_cars(
+    filters: CarFilter = Body(...),
+    connection: AsyncConnection = Depends(get_db_connection),
+):
+    return await get_filtered_cars(filters.model_dump(exclude_none=True), connection)
