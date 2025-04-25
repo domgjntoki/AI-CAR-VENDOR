@@ -1,6 +1,7 @@
 from sqlalchemy import insert, delete, select, update, and_
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from src.constants import FILTER_MAPPING
 from src.database import cars, fetch_all, fetch_one, execute
 from src.schemas import CarResponse, CarFilter
 
@@ -46,24 +47,17 @@ async def delete_car(car_id: int, connection: AsyncConnection) -> None:
     await execute(query, connection, commit_after=True)
 
 
-# Default mapping for common operations
-DEFAULT_OPERATIONS = {
-    "list": lambda col, value: col.in_(value),
-    "int": lambda col, value: col == value,
-    "float": lambda col, value: col == value,
-}
-
-# Dynamically generate FILTER_MAPPING
-FILTER_MAPPING = {
-    field_name: DEFAULT_OPERATIONS.get(field.type_.__name__, lambda col, value: col == value)
-    for field_name, field in CarFilter.model_fields.items()
-}
-
 async def get_filtered_cars(filters: dict, connection: AsyncConnection) -> list[dict]:
     query_filters = []
     for key, value in filters.items():
         if value is not None and key in FILTER_MAPPING:
-            query_filters.append(FILTER_MAPPING[key](getattr(cars.c, key), value))
+            # Map logical keys (e.g., min_year) to actual column names (e.g., year)
+            column_name = key.replace("min_", "").replace("max_", "")  # Extract base column name
+            if hasattr(cars.c, column_name):
+                column = getattr(cars.c, column_name)
+                query_filters.append(FILTER_MAPPING[key](column, value))
+            else:
+                raise AttributeError(f"Column '{column_name}' does not exist in the 'cars' table.")
 
     query = cars.select().where(and_(*query_filters)) if query_filters else cars.select()
     results = await fetch_all(query, connection)
