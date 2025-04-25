@@ -3,18 +3,35 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-class CarCreate(BaseModel):
-    brand: str = Field(..., max_length=50)
-    model: str = Field(..., max_length=50)
+class CarBase(BaseModel):
+    brand: str
+    model: str
     year: int
-    engine: Optional[str] = Field(None, max_length=20)
-    fuel_type: Optional[str] = Field(None, max_length=20)
-    color: Optional[str] = Field(None, max_length=30)
-    mileage: Optional[int]
-    doors: Optional[int]
-    transmission: Optional[str] = Field(None, max_length=20)
-    price: Optional[float]
+    engine: str | None = None
+    fuel_type: str | None = None
+    color: str | None = None
+    mileage: int | None = None
+    doors: int | None = None
+    transmission: str | None = None
+    price: float | None = None
 
 
-class CarResponse(CarCreate):
-    id: int
+class CarCreate(CarBase):
+    pass
+
+
+class CarUpdate(BaseModel):
+    brand: str | None = None
+    model: str | None = None
+    year: int | None = None
+    engine: str | None = None
+    fuel_type: str | None = None
+    color: str | None = None
+    mileage: int | None = None
+    doors: int | None = None
+    transmission: str | None = None
+    price: float | None = None
+
+
+class CarResponse(CarBase):
+    id: int = Field(..., description="Car ID")
