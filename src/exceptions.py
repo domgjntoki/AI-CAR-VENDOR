@@ -5,6 +5,7 @@ class CarCreationError(HTTPException):
     def __init__(self, detail: str = "Failed to create car"):
         super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
+
 class CarNotFoundError(Exception):
     def __init__(self, detail: str = "Car not found"):
         self.detail = detail

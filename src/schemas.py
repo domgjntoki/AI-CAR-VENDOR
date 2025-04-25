@@ -1,7 +1,6 @@
-from typing import Optional, Callable
+from typing import Optional
 
 from pydantic import BaseModel, Field
-from sqlalchemy import Column
 
 
 class CarBase(BaseModel):
@@ -37,6 +36,7 @@ class CarUpdate(BaseModel):
 class CarResponse(CarBase):
     id: int = Field(..., description="Car ID")
 
+
 class CarFilter(BaseModel):
     brand: Optional[list[str]] = None
     model: Optional[list[str]] = None
@@ -49,4 +49,3 @@ class CarFilter(BaseModel):
     mileage: Optional[int] = None
     doors: Optional[int] = None
     transmission: Optional[list[str]] = None
-

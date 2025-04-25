@@ -5,8 +5,8 @@ import sentry_sdk
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from src.config import app_configs, settings
 from src.car_router import router as car_router
+from src.config import app_configs, settings
 
 
 @asynccontextmanager

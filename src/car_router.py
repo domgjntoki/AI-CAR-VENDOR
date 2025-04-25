@@ -1,16 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Body
+from fastapi import APIRouter, Body, Depends
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from src.database import get_db_connection
-from src.exceptions import CarNotFoundError, CarUpdateError, CarDeletionError, CarCreationError
-from src.schemas import CarCreate, CarResponse, CarUpdate, CarFilter
+from src.exceptions import (
+    CarCreationError,
+    CarDeletionError,
+    CarNotFoundError,
+    CarUpdateError,
+)
+from src.schemas import CarCreate, CarFilter, CarResponse, CarUpdate
 from src.services import (
     create_car,
     create_multiple_cars,
-    get_car_by_id,
+    delete_car,
     get_all_cars,
+    get_car_by_id,
+    get_filtered_cars,
     update_car,
-    delete_car, get_filtered_cars,
 )
 
 router = APIRouter(
@@ -47,7 +53,9 @@ async def list_cars(connection: AsyncConnection = Depends(get_db_connection)):
 
 
 @router.get("/cars/{car_id}", response_model=CarResponse)
-async def retrieve_car(car_id: int, connection: AsyncConnection = Depends(get_db_connection)):
+async def retrieve_car(
+    car_id: int, connection: AsyncConnection = Depends(get_db_connection)
+):
     car = await get_car_by_id(car_id, connection)
     if not car:
         raise CarNotFoundError()
@@ -56,20 +64,27 @@ async def retrieve_car(car_id: int, connection: AsyncConnection = Depends(get_db
 
 @router.patch("/cars/{car_id}", response_model=CarResponse)
 async def modify_car(
-    car_id: int, car_data: CarUpdate, connection: AsyncConnection = Depends(get_db_connection)
+    car_id: int,
+    car_data: CarUpdate,
+    connection: AsyncConnection = Depends(get_db_connection),
 ):
-    updated_car = await update_car(car_id, car_data.model_dump(exclude_unset=True), connection)
+    updated_car = await update_car(
+        car_id, car_data.model_dump(exclude_unset=True), connection
+    )
     if not updated_car:
         raise CarUpdateError()
     return updated_car
 
 
 @router.delete("/cars/{car_id}", status_code=204)
-async def remove_car(car_id: int, connection: AsyncConnection = Depends(get_db_connection)):
+async def remove_car(
+    car_id: int, connection: AsyncConnection = Depends(get_db_connection)
+):
     try:
         await delete_car(car_id, connection)
     except Exception:
         raise CarDeletionError()
+
 
 @router.post("/cars/filter", response_model=list[CarResponse])
 async def filter_cars(

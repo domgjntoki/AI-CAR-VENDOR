@@ -1,6 +1,6 @@
 from enum import Enum
 
-from sqlalchemy import func, or_
+from sqlalchemy import or_
 
 DB_NAMING_CONVENTION = {
     "ix": "%(column_0_label)s_idx",
@@ -11,18 +11,29 @@ DB_NAMING_CONVENTION = {
 }
 
 FILTER_MAPPING = {
-    "brand": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value]) if value else None,
-    "model": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value]) if value else None,
+    "brand": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value])
+    if value
+    else None,
+    "model": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value])
+    if value
+    else None,
     "min_year": lambda col, value: col >= value if value else None,
     "max_year": lambda col, value: col <= value if value else None,
     "min_price": lambda col, value: col >= value if value else None,
     "max_price": lambda col, value: col <= value if value else None,
-    "fuel_type": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value]) if value else None,
-    "color": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value]) if value else None,
+    "fuel_type": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value])
+    if value
+    else None,
+    "color": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value])
+    if value
+    else None,
     "mileage": lambda col, value: col <= value if value else None,
     "doors": lambda col, value: col == value if value else None,
-    "transmission": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value]) if value else None,
+    "transmission": lambda col, value: or_(*[col.ilike(f"%{v}%") for v in value])
+    if value
+    else None,
 }
+
 
 class Environment(str, Enum):
     LOCAL = "LOCAL"
