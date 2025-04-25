@@ -1,10 +1,15 @@
 from typing import Any
 
 from sqlalchemy import (
+    Column,
     CursorResult,
+    Float,
     Insert,
+    Integer,
     MetaData,
     Select,
+    String,
+    Table,
     Update,
 )
 from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
@@ -21,6 +26,23 @@ engine = create_async_engine(
     pool_pre_ping=settings.DATABASE_POOL_PRE_PING,
 )
 metadata = MetaData(naming_convention=DB_NAMING_CONVENTION)
+
+
+cars = Table(
+    "cars",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("brand", String(50), nullable=False),
+    Column("model", String(50), nullable=False),
+    Column("year", Integer, nullable=False),
+    Column("engine", String(20), nullable=True),
+    Column("fuel_type", String(20), nullable=True),
+    Column("color", String(30), nullable=True),
+    Column("mileage", Integer, nullable=True),
+    Column("doors", Integer, nullable=True),
+    Column("transmission", String(20), nullable=True),
+    Column("price", Float, nullable=True),
+)
 
 
 async def fetch_one(
