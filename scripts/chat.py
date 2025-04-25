@@ -146,6 +146,7 @@ while True:
     backend_query = backend_query.replace("\n", "").replace(" ", "")
     backend_query = backend_query.replace("{", "{{").replace("}", "}}")
     backend_query_history.append(("ai", backend_query))
+    backend_query_history.append(("ai", ai_response_to_backend))
 
     backend_responses_history.append(("human", user_query))
     backend_responses_history.append(("ai", ai_response_to_backend))
