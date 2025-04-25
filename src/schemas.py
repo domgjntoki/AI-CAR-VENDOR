@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field
 from typing import Optional
+
+from pydantic import BaseModel, Field
+
 
 class CarCreate(BaseModel):
     brand: str = Field(..., max_length=50)
@@ -12,6 +14,7 @@ class CarCreate(BaseModel):
     doors: Optional[int]
     transmission: Optional[str] = Field(None, max_length=20)
     price: Optional[float]
+
 
 class CarResponse(CarCreate):
     id: int

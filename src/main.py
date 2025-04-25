@@ -36,6 +36,7 @@ if settings.ENVIRONMENT.is_deployed:
 
 app.include_router(router)
 
+
 @app.get("/healthcheck", include_in_schema=False)
 async def healthcheck() -> dict[str, str]:
     return {"status": "ok"}
