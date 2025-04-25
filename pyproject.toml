@@ -67,6 +67,7 @@ python-dotenv = "^1.1.0"
 openai = "^1.76.0"
 langchain = "^0.3.24"
 langchain-openai = "^0.3.14"
+rich = "^14.0.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.8"

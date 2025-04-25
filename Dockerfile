@@ -41,7 +41,6 @@ COPY . .
 
 RUN useradd -m -d /src -s /bin/bash app \
     && chown -R app:app /src/* && chown -R app:app /src \
-    && chmod +x entrypoints/* \
     && rm -rf /tmp/prometheus_multiproc_dir && mkdir -p /tmp/prometheus_multiproc_dir \
     && chown -R app:app /tmp/prometheus_multiproc_dir
 
