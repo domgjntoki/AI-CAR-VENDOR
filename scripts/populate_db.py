@@ -11,8 +11,10 @@ def generate_fake_cars(num: int) -> list[dict]:
     """Generate a list of fake car data."""
     car_companies = [
         "Toyota", "Ford", "Chevrolet", "Honda", "Nissan",
-        "BMW", "Mercedes-Benz", "Volkswagen", "Hyundai", "Kia"
-    ]  # Add more real-world car companies as needed
+        "BMW", "Mercedes-Benz", "Volkswagen", "Hyundai", "Kia",
+        "Fiat", "Subaru", "Mazda", "Porsche", "Lexus",
+        "Sedan", "Audi", "Jaguar", "Land Rover", "Volvo",
+    ]
 
     cars = []
     for _ in range(num):

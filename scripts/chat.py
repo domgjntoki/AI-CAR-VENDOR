@@ -7,10 +7,13 @@ from langchain_openai import ChatOpenAI
 import httpx
 import json
 
+from rich.columns import Columns
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.prompt import Prompt
+from rich.text import Text
+from rich.style import Style
 
 # Load the API key from the .env file
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
@@ -167,6 +170,41 @@ def display_markdown(content: str, title: str = None):
     console.print(panel)
 
 
+def show_how_to_use():
+    """Display search parameters and example questions."""
+    console.print("\n[bold blue]Parâmetros de busca disponíveis:[/bold blue]")
+
+    parameters = [
+        "Marca (Toyota, Ford, BMW, etc.)",
+        "Modelo (Corolla, Focus, etc.)",
+        "Ano (1990-2023)",
+        "Motor (1.0L, 2.5L, etc.)",
+        "Combustível (Gasolina, Diesel, Elétrico, Híbrido)",
+        "Cor (vermelho, azul, preto, etc.)",
+        "Quilometragem (em km)",
+        "Número de portas (2-5)",
+        "Transmissão (Manual, Automático)",
+        "Preço (em R$)"
+    ]
+
+    for param in parameters:
+        console.print(f"• [cyan]{param}[/cyan]")
+
+    console.print("\n[bold blue]Exemplos de perguntas:[/bold blue]")
+    examples = [
+        "Quero um Toyota vermelho de 2015 a 2020",
+        "Carros sedan automáticos",
+        "Carros com menos de 50.000 km",
+        "Carros híbridos disponíveis"
+    ]
+
+    for example in examples:
+        console.print(f"• [green]{example}[/green]")
+
+    console.print()
+
+
+
 backend_query_history = []
 backend_responses_history = []
 current_car_options = []
@@ -178,6 +216,7 @@ console.print("[bold magenta]Bem-vindo ao Aplicativo de Chat para Busca de Carro
 console.print("[bold cyan]Digite 'exit' para sair do aplicativo.[/bold cyan]")
 
 while True:
+    show_how_to_use()
     user_query = Prompt.ask("[bold green]Digite sua pergunta[/bold green]")
     if user_query.lower() == "exit":
         console.print("[bold yellow]Até logo![/bold yellow]")
