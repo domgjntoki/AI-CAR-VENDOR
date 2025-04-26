@@ -7,6 +7,23 @@ Este projeto oferece um assistente com inteligência artificial que ajuda usuár
 - Docker e Docker Compose
 - Python 3.11 ou superior (para execução local)
 - Poetry (para execução local)
+Considerando que o README está em português, vou adicionar a seção sobre configuração do ambiente também em português:
+
+
+## Configuração do Ambiente
+
+1. Copie o arquivo de ambiente de exemplo para criar seu próprio arquivo `.env`:
+   ```bash
+   cp .env.example .env
+
+
+2. Atualize o arquivo `.env` com sua própria chave de API do OpenAI:
+   ```
+   OPENAI_API_KEY=sua_chave_de_api_openai_real
+   ```
+
+Observação: Uma chave de API OpenAI válida é necessária para que a aplicação funcione corretamente. Você pode obter uma chave de API registrando-se na [plataforma da OpenAI](https://platform.openai.com/).
+
 
 ## Como Iniciar
 
@@ -27,7 +44,11 @@ Este comando inicia:
 Para adicionar dados de carros de exemplo ao banco de dados:
 
 ```bash
-docker exec -it car_api poetry run python populate_db.py
+# Aplica as migrações para criar a estrutura das tabelas no banco de dados
+docker exec -it car_api poetry run alembic upgrade head
+
+# Popula o banco com um catálogo de carros de exemplo para demonstração
+docker exec -it car_api poetry run python scripts/populate_db.py
 ```
 
 Este comando adiciona registros de teste de carros ao seu banco de dados.
