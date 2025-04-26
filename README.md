@@ -7,8 +7,6 @@ Este projeto oferece um assistente com inteligência artificial que ajuda usuár
 - Docker e Docker Compose
 - Python 3.11 ou superior (para execução local)
 - Poetry (para execução local)
-Considerando que o README está em português, vou adicionar a seção sobre configuração do ambiente também em português:
-
 
 ## Configuração do Ambiente
 
