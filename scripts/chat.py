@@ -18,8 +18,7 @@ load_dotenv(dotenv_path)
 def user_question_to_backend_query(user_query: str, history):
     model = ChatOpenAI(
         temperature=0.7,
-        model="gpt-4o",
-        max_tokens=1000,
+        model="gpt-4o-mini",
     )
     prompt = ChatPromptTemplate.from_messages([
         ("system", "Você é uma IA que ajuda os usuários a encontrar carros com base em suas preferências."),
@@ -72,7 +71,6 @@ def summary_backend_response_to_user(backend_query: str, history):
     model = ChatOpenAI(
         temperature=0.7,
         model="gpt-4o-mini",
-        max_tokens=1000,
     )
     prompt = ChatPromptTemplate.from_messages([
         ("system", "Você é uma IA que ajuda os usuários a encontrar carros com base em suas preferências."),
@@ -81,10 +79,9 @@ def summary_backend_response_to_user(backend_query: str, history):
          "fuel_type, color, mileage, doors, transmission, price."),
         ("system",
          "Sua tarefa é resumir a resposta do backend, que é uma lista de carros, em um formato amigável para o usuário."),
-        ("system",
-         "Exemplo: Se a resposta do backend for [{{\"brand\": \"Toyota\", \"model\": \"Camry\", \"year\": 2020}}], "
-         "o histórico da pergunta do usuário e da consulta para o backend é:"),
-        ("system", "A informação sobre a lista atual de carros na resposta é: {backend_response}"),
+        ("system", "Foram encontrados {cars_found}, resposta do backend: {backend_response}"),
+        ("system", "Fale para o usuário todas as opções, a não ser que tenha mais de 10 opções, "
+                   "nesse caso, diga que existem mais de 10 opções e peça para o usuário filtrar mais."),
         *history,
     ])
 
@@ -98,33 +95,37 @@ def summary_backend_response_to_user(backend_query: str, history):
         # Sanitize the backend query
         backend_query = backend_query.replace("```json", "").replace("```", "")
         json_query = json.loads(backend_query)
-        #print(f"Sending backend query: {json_query}")
+
         # Send the backend query as JSON
         response = httpx.post(API_URL, headers=headers, json=json_query)
         response.raise_for_status()  # Raise an error for HTTP issues
         backend_response = response.json()  # Parse the JSON response
-        # turn the json response into a string
-        # then double the curly braces
-        backend_response = json.dumps(backend_response, indent=2)
-        backend_response = backend_response.replace("{", "{{").replace("}", "}}")
-        #print(f"Received backend response: {backend_response}")
+        if len(backend_response) > 10:
+            backend_response = backend_response[:11]
+        cars_found = len(backend_response) if isinstance(backend_response, list) else 0
+        backend_response = json.dumps(backend_response, indent=0)
+        #backend_response = backend_response.replace("{", "{{").replace("}", "}}")
+        # Generate the summary using the AI model
+        ai_response = chain.invoke({
+            "backend_response": backend_response,
+            "history": history,
+            "cars_found": cars_found,
+        })
+        return ai_response.content, backend_response
     except (httpx.RequestError, httpx.HTTPStatusError) as e:
         return f"Error communicating with the backend: {e}", {}
     except json.JSONDecodeError as e:
         return f"Error decoding backend response: {e}", {}
 
-    # Generate the summary using the AI model
-    ai_response = chain.invoke({
-        "backend_response": backend_response,
-        "history": history
-    })
-    return ai_response.content, backend_response
+
 
 
 def display_markdown(content: str, title: str = None):
     """Render and display Markdown content inside a panel."""
     markdown = Markdown(content)
-    panel = Panel(markdown, title=title, expand=True)
+    panel = Panel(markdown,
+                  title=title,
+                  expand=True)
     console.print(panel)
 
 
@@ -167,9 +168,8 @@ backend_query_history = []
 backend_responses_history = []
 current_car_options = []
 
-# Initialize the rich console
 console = Console()
-# Replace these English UI texts with Portuguese translations
+
 console.print("[bold magenta]Bem-vindo ao Aplicativo de Chat para Busca de Carros![/bold magenta]")
 console.print("[bold cyan]Digite 'exit' para sair do aplicativo.[/bold cyan]")
 
@@ -207,6 +207,7 @@ while True:
     backend_query_history.append(("ai", ai_response_to_backend))
 
     display_markdown(f"```json\n{backend_query}\n```", title="Consulta ao Backend")
+    display_markdown(backend_response, title="Resposta da Backend")
     display_markdown(ai_response_to_backend, title="Resposta da IA")
 
     # Set ai_response for the history
