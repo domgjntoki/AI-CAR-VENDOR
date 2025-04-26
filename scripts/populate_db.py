@@ -2,7 +2,7 @@ import asyncio
 import httpx
 from faker import Faker
 
-API_URL = "http://localhost:8000/api/v1/cars/bulk"  # Replace with your API URL
+API_URL = "http://localhost:8000/api/v1/cars/bulk" 
 NUM_VEHICLES = 400
 
 fake = Faker()
