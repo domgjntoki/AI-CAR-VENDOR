@@ -1,19 +1,15 @@
 import os
 
 from dotenv import load_dotenv
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 import httpx
 import json
 
-from rich.columns import Columns
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.prompt import Prompt
-from rich.text import Text
-from rich.style import Style
 
 # Load the API key from the .env file
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
@@ -22,7 +18,7 @@ load_dotenv(dotenv_path)
 def user_question_to_backend_query(user_query: str, history):
     model = ChatOpenAI(
         temperature=0.7,
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
         max_tokens=1000,
     )
     prompt = ChatPromptTemplate.from_messages([
@@ -51,8 +47,14 @@ def user_question_to_backend_query(user_query: str, history):
                    "}}"),
         ("system", "Note que a base de dados é em inglês, então a consulta deve ser em inglês."),
         ("system", "A sua resposta deve ser apenas o json, nada mais."),
+        ("system", "O usuário pode também desconsiderar dados antigos se quiser. "
+                   "Por exemplo: Desconsidere o tipo de combustível, quero mais opções. "
+                   "Exemplo: Desconsidere o preço (nesse caso, max price, min price iriam pra 0). "
+                   "Exemplo: Desconsidere o ano de lançamento (nesse caso, min_year e max_year iria pra 0)"),
         ("system", "Se o usuário não especificar nada novo, pedir esclarecimento sobre algo, "
-                   "você deve retornar o mesmo json que foi enviado na última consulta. Última consulta: {last_query}"),
+                   "você deve retornar o mesmo json que foi enviado na última consulta."),
+        ("system", "Última consulta: {last_query}"),
+        ("system", "A sua resposta deve ser apenas o json, nada mais."),
         *history,
         ("user", "{user_query}"),
     ])
@@ -117,50 +119,6 @@ def summary_backend_response_to_user(backend_query: str, history):
         "history": history
     })
     return ai_response.content, backend_response
-
-def classify_user_intent(user_query: str, current_results_available: bool):
-    model = ChatOpenAI(
-        temperature=0.3,
-        model="gpt-4o-mini",
-        max_tokens=100,
-    )
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "Determine the user's intent from their query."),
-        ("system", "Return exactly one of these categories: NEW_SEARCH, REFINE_SEARCH, SELECT_CAR, COMPARE_CARS, HELP_CHOOSE"),
-        ("system", f"Current results available: {current_results_available}"),
-        ("system", "Examples: 'Mostre carros Toyota vermelhos' → NEW_SEARCH"),
-        ("system", "'Destes carros, qual tem melhor consumo?' → COMPARE_CARS"),
-        ("system", "'Eu quero o segundo carro da lista' → SELECT_CAR"),
-        ("system", "'Me ajude a escolher entre esses carros' → HELP_CHOOSE"),
-        ("system", "'Quero ver apenas os mais baratos desta lista' → REFINE_SEARCH"),
-        ("user", "{user_query}")
-    ])
-    chain = prompt | model
-    return chain.invoke({"user_query": user_query})
-
-def handle_car_selection(user_query: str, current_cars, history):
-    model = ChatOpenAI(
-        temperature=0.7,
-        model="gpt-4o-mini",
-        max_tokens=1000,
-    )
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "Você é um assistente de seleção de carros."),
-        ("system", "O usuário está tentando selecionar ou comparar carros da lista atual."),
-        ("system", "A lista de carros atual é: {current_cars}"),
-        ("system", "Se o usuário estiver escolhendo um carro específico, identifique qual carro e dê detalhes completos."),
-        ("system", "Se o usuário pedir para comparar carros, faça uma comparação detalhada."),
-        ("system", "Se o usuário pedir ajuda para escolher, dê uma recomendação baseada nas características."),
-        *history,
-        ("user", "{user_query}"),
-    ])
-    chain = prompt | model
-    response = chain.invoke({
-        "user_query": user_query,
-        "current_cars": current_cars,
-        "history": history
-    })
-    return response.content
 
 
 def display_markdown(content: str, title: str = None):
@@ -228,44 +186,31 @@ while True:
     # Check if we have current results and determine intent
     has_results = len(backend_responses_history) > 0 and "backend_response" in locals()
 
-    with console.status("[bold blue]Analisando sua pergunta...") as status:
-        intent = classify_user_intent(user_query, has_results)
 
-    if intent in ["SELECT_CAR", "COMPARE_CARS", "HELP_CHOOSE"] and has_results:
-        # Handle selection/comparison from current results
-        with console.status("[bold blue]Analisando as opções...") as status:
-            ai_response = handle_car_selection(user_query, backend_response, backend_responses_history)
-        display_markdown(ai_response, title="Seleção de Carros")
+    # Original flow for search queries
+    with console.status("[bold blue]Processando sua pergunta...") as status:
+        backend_query = user_question_to_backend_query(user_query, backend_query_history)
 
-        # Add query to backend_query_history
-        backend_query_history.append(("human", user_query))
-        # No backend query for selection intents, but we need to record the response
-        backend_query_history.append(("ai", ai_response))
-    else:
-        # Original flow for search queries
-        with console.status("[bold blue]Processando sua pergunta...") as status:
-            backend_query = user_question_to_backend_query(user_query, backend_query_history)
+    # Add user query to backend_query_history
+    backend_query_history.append(("human", user_query))
 
-        # Add user query to backend_query_history
-        backend_query_history.append(("human", user_query))
+    # Format and store backend query in history
+    formatted_backend_query = backend_query.replace("\n", "").replace(" ", "")
+    formatted_backend_query = formatted_backend_query.replace("{", "{{").replace("}", "}}")
+    backend_query_history.append(("ai", formatted_backend_query))
 
-        # Format and store backend query in history
-        formatted_backend_query = backend_query.replace("\n", "").replace(" ", "")
-        formatted_backend_query = formatted_backend_query.replace("{", "{{").replace("}", "}}")
-        backend_query_history.append(("ai", formatted_backend_query))
+    with console.status("[bold blue]Buscando e analisando opções de carros...") as status:
+        ai_response_to_backend, backend_response = summary_backend_response_to_user(
+            backend_query, backend_responses_history)
 
-        with console.status("[bold blue]Buscando e analisando opções de carros...") as status:
-            ai_response_to_backend, backend_response = summary_backend_response_to_user(
-                backend_query, backend_responses_history)
+    # Add AI response to backend_query_history
+    backend_query_history.append(("ai", ai_response_to_backend))
 
-        # Add AI response to backend_query_history
-        backend_query_history.append(("ai", ai_response_to_backend))
+    display_markdown(f"```json\n{backend_query}\n```", title="Consulta ao Backend")
+    display_markdown(ai_response_to_backend, title="Resposta da IA")
 
-        display_markdown(f"```json\n{backend_query}\n```", title="Consulta ao Backend")
-        display_markdown(ai_response_to_backend, title="Resposta da IA")
-
-        # Set ai_response for the history
-        ai_response = ai_response_to_backend
+    # Set ai_response for the history
+    ai_response = ai_response_to_backend
 
     # Always append AI response to backend_responses_history
     backend_responses_history.append(("ai", ai_response))
